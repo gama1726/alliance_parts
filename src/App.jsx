@@ -21,6 +21,9 @@ export default function App() {
     changeCartQty,
     removeFromCart,
     clearCart,
+    toasts,
+    pushToast,
+    removeToast,
   } = useAppStore();
 
   const goSearch = useCallback((query) => {
@@ -30,6 +33,18 @@ export default function App() {
     navigate(`/search?q=${encodeURIComponent(q)}`);
   }, [addRecentSearch, navigate]);
 
+  const addToCartWithToast = useCallback(
+    (productId) => {
+      addToCart(productId);
+      pushToast({
+        kind: "success",
+        title: "Добавлено в корзину",
+        text: `Позиция ${productId} добавлена.`,
+      });
+    },
+    [addToCart, pushToast],
+  );
+
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [location.pathname, location.search]);
@@ -37,6 +52,8 @@ export default function App() {
   return (
     <Layout
       cartCount={cartCount}
+      toasts={toasts}
+      onDismissToast={removeToast}
       onGoHome={() => navigate("/")}
       onGoGarage={() => navigate("/garage")}
       onGoCart={() => navigate("/cart")}
@@ -49,11 +66,17 @@ export default function App() {
         />
         <Route
           path="/search"
-          element={<SearchRoute onOpenProduct={(id, ctx) => navigate(`/product/${id}`, { state: ctx })} onGoGarage={() => navigate("/garage")} />}
+          element={
+            <SearchRoute
+              onOpenProduct={(id, ctx) => navigate(`/product/${id}`, { state: ctx })}
+              onGoGarage={() => navigate("/garage")}
+              onApiError={(message) => pushToast({ kind: "error", title: "Ошибка поиска", text: message })}
+            />
+          }
         />
         <Route
           path="/product/:id"
-          element={<ProductRoute onAddToCart={addToCart} onSearchArticle={goSearch} />}
+          element={<ProductRoute onAddToCart={addToCartWithToast} onSearchArticle={goSearch} onApiError={(message) => pushToast({ kind: "error", title: "Ошибка карточки", text: message })} />}
         />
         <Route
           path="/garage"
@@ -72,8 +95,14 @@ export default function App() {
               onGoHome={() => navigate("/")}
               onOpenProduct={(id) => navigate(`/product/${id}`, { state: { from: "cart" } })}
               onQtyChange={changeCartQty}
-              onRemove={removeFromCart}
-              onClear={clearCart}
+              onRemove={(id) => {
+                removeFromCart(id);
+                pushToast({ kind: "info", title: "Позиция удалена", text: `Товар ${id} удален из корзины.` });
+              }}
+              onClear={() => {
+                clearCart();
+                pushToast({ kind: "info", title: "Корзина очищена", text: "Все позиции удалены." });
+              }}
             />
           }
         />
@@ -84,7 +113,7 @@ export default function App() {
   );
 }
 
-function SearchRoute({ onOpenProduct, onGoGarage }) {
+function SearchRoute({ onOpenProduct, onGoGarage, onApiError }) {
   const [params] = useSearchParams();
   const query = String(params.get("q") || "").trim();
 
@@ -95,11 +124,12 @@ function SearchRoute({ onOpenProduct, onGoGarage }) {
       query={query}
       onOpenProduct={(id) => onOpenProduct(id, { from: "search", query })}
       onGoGarage={onGoGarage}
+      onApiError={onApiError}
     />
   );
 }
 
-function ProductRoute({ onAddToCart, onSearchArticle }) {
+function ProductRoute({ onAddToCart, onSearchArticle, onApiError }) {
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
@@ -110,6 +140,11 @@ function ProductRoute({ onAddToCart, onSearchArticle }) {
     setProduct(undefined);
     fetchProductById(id).then((res) => {
       if (isActive) setProduct(res || null);
+    }).catch((e) => {
+      if (!isActive) return;
+      const message = e?.message || "Не удалось загрузить карточку";
+      onApiError?.(message);
+      setProduct(null);
     });
     return () => {
       isActive = false;

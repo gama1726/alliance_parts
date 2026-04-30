@@ -1,91 +1,35 @@
-import { useEffect, useMemo, useState } from "react";
-import { catalogGroups, garageCars, getProductById, parseVin, resolveProductIdFromQuery, vinLookup } from "../data/mockData.js";
+import { useEffect, useState } from "react";
 import { Icon } from "../components/Icon.jsx";
 import { ImageWithFallback } from "../components/ImageWithFallback.jsx";
+import { searchCatalog } from "../api/mockApi.js";
 
-function detectQueryType(query) {
-  const raw = String(query || "").trim();
-  if (!raw) return "empty";
-  const compact = raw.replace(/[\s\u00A0\-–—._/\\|]+/g, "").toUpperCase();
-  if (compact.length === 17) return "vin";
-  if (/[A-Z]/i.test(raw) && /\d/.test(raw)) return "article";
-  if (raw.length < 3) return "too_short";
-  return "text";
-}
-
-function getSearchHint(query, hasVinMatch, hasProductMatch) {
-  const raw = String(query || "").trim();
-  const compact = raw.replace(/[\s\u00A0\-–—._/\\|]+/g, "").toUpperCase();
-  const type = detectQueryType(raw);
-
-  if (!raw) {
-    return {
-      kind: "error",
-      title: "Пустой запрос",
-      text: "Введите артикул, VIN или текст запроса перед поиском.",
-    };
-  }
-
-  if (hasVinMatch || hasProductMatch) {
-    return {
-      kind: "ok",
-      title: "Результаты найдены",
-      text: "Откройте карточку или используйте фильтры справа для следующего шага.",
-    };
-  }
-
-  if (type === "vin") {
-    if (!parseVin(raw)) {
-      return {
-        kind: "error",
-        title: "VIN похож на некорректный",
-        text: "VIN должен содержать 17 символов и не включать I, O, Q.",
-      };
-    }
-    return {
-      kind: "empty",
-      title: "VIN не найден в демо-базе",
-      text: "Для проверки используйте VF3MJAHXVGS314095.",
-    };
-  }
-
-  if (type === "too_short") {
-    return {
-      kind: "error",
-      title: "Слишком короткий запрос",
-      text: "Введите минимум 3 символа или полный артикул.",
-    };
-  }
-
-  if (type === "article") {
-    return {
-      kind: "empty",
-      title: "Артикул не найден",
-      text: "Попробуйте OE31601 или 4144109100.",
-    };
-  }
-
-  return {
-    kind: "empty",
-    title: "Совпадений нет",
-    text: `По запросу «${compact || raw}» ничего не найдено в локальных данных.`,
-  };
-}
-
-export function SearchPage({ query, onOpenProduct, onGoGarage }) {
+export function SearchPage({ query, onOpenProduct, onGoGarage, onApiError }) {
   const [isLoading, setIsLoading] = useState(true);
+  const [dto, setDto] = useState(null);
+  const [errorText, setErrorText] = useState("");
 
   useEffect(() => {
+    let isActive = true;
     setIsLoading(true);
-    const timer = setTimeout(() => setIsLoading(false), 320);
-    return () => clearTimeout(timer);
-  }, [query]);
-
-  const vin = useMemo(() => parseVin(query), [query]);
-  const vehicle = useMemo(() => (vin ? vinLookup[vin] : null), [vin]);
-  const productId = useMemo(() => resolveProductIdFromQuery(query), [query]);
-  const product = useMemo(() => (productId ? getProductById(productId) : null), [productId]);
-  const hint = useMemo(() => getSearchHint(query, Boolean(vehicle), Boolean(product)), [query, vehicle, product]);
+    setErrorText("");
+    searchCatalog(query)
+      .then((result) => {
+        if (!isActive) return;
+        setDto(result);
+      })
+      .catch((e) => {
+        if (!isActive) return;
+        const message = e?.message || "Не удалось выполнить поиск";
+        setErrorText(message);
+        onApiError?.(message);
+      })
+      .finally(() => {
+        if (isActive) setIsLoading(false);
+      });
+    return () => {
+      isActive = false;
+    };
+  }, [query, onApiError]);
 
   if (isLoading) {
     return (
@@ -111,8 +55,27 @@ export function SearchPage({ query, onOpenProduct, onGoGarage }) {
     );
   }
 
+  if (errorText) {
+    return (
+      <main className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8">
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-rose-900">
+          <div className="text-lg font-bold">Ошибка поиска</div>
+          <div className="mt-1 text-sm">{errorText}</div>
+        </div>
+      </main>
+    );
+  }
+
+  if (!dto) return null;
+
+  const vehicle = dto.vehicle;
+  const product = dto.product;
+  const hint = dto.hint;
+  const garageCars = dto.sidebar.garageCars;
+  const catalogGroups = dto.sidebar.catalogGroups;
+
   return (
-    <main className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8">
+    <main className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8" data-testid="search-page">
       <nav aria-label="Навигация" className="mb-6 flex flex-wrap items-center gap-2 text-sm text-slate-500">
         <span className="font-medium text-slate-900">Результаты</span>
         <span className="text-slate-300">/</span>
@@ -171,6 +134,7 @@ export function SearchPage({ query, onOpenProduct, onGoGarage }) {
             <button
               type="button"
               onClick={() => onOpenProduct(product.id)}
+              data-testid="search-result-product"
               className="mt-6 w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-md transition hover:border-teal-300 hover:shadow-lg"
             >
               <div className="flex gap-4">
@@ -209,7 +173,7 @@ export function SearchPage({ query, onOpenProduct, onGoGarage }) {
               </div>
             </button>
           ) : (
-            <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center">
+            <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center" data-testid="search-empty-state">
               <p className="font-semibold text-slate-800">Для этого запроса нет демо-карточки</p>
               <p className="mt-2 text-sm text-slate-600">
                 Попробуйте <strong>OE31601</strong>, <strong>4144109100</strong> или VIN{" "}
