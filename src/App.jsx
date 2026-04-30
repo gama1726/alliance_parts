@@ -39,7 +39,7 @@ export default function App() {
       pushToast({
         kind: "success",
         title: "Добавлено в корзину",
-        text: `Позиция ${productId} добавлена.`,
+        text: "Товар добавлен и готов к оформлению.",
       });
     },
     [addToCart, pushToast],
@@ -70,13 +70,31 @@ export default function App() {
             <SearchRoute
               onOpenProduct={(id, ctx) => navigate(`/product/${id}`, { state: ctx })}
               onGoGarage={() => navigate("/garage")}
-              onApiError={(message) => pushToast({ kind: "error", title: "Ошибка поиска", text: message })}
+              onApiError={(message) =>
+                pushToast({
+                  kind: "error",
+                  title: "Поиск временно недоступен",
+                  text: message || "Попробуйте повторить запрос через пару минут.",
+                })
+              }
             />
           }
         />
         <Route
           path="/product/:id"
-          element={<ProductRoute onAddToCart={addToCartWithToast} onSearchArticle={goSearch} onApiError={(message) => pushToast({ kind: "error", title: "Ошибка карточки", text: message })} />}
+          element={
+            <ProductRoute
+              onAddToCart={addToCartWithToast}
+              onSearchArticle={goSearch}
+              onApiError={(message) =>
+                pushToast({
+                  kind: "error",
+                  title: "Карточка временно недоступна",
+                  text: message || "Попробуйте открыть товар немного позже.",
+                })
+              }
+            />
+          }
         />
         <Route
           path="/garage"
@@ -97,11 +115,11 @@ export default function App() {
               onQtyChange={changeCartQty}
               onRemove={(id) => {
                 removeFromCart(id);
-                pushToast({ kind: "info", title: "Позиция удалена", text: `Товар ${id} удален из корзины.` });
+                pushToast({ kind: "info", title: "Товар удалён", text: "Позиция убрана из корзины." });
               }}
               onClear={() => {
                 clearCart();
-                pushToast({ kind: "info", title: "Корзина очищена", text: "Все позиции удалены." });
+                pushToast({ kind: "info", title: "Корзина очищена", text: "Вы можете добавить новые товары в корзину." });
               }}
             />
           }
