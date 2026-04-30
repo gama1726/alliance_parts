@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Icon } from "../components/Icon.jsx";
 import { ImageWithFallback } from "../components/ImageWithFallback.jsx";
 import { searchCatalog } from "../api/mockApi.js";
@@ -7,6 +7,11 @@ export function SearchPage({ query, onOpenProduct, onGoGarage, onApiError }) {
   const [isLoading, setIsLoading] = useState(true);
   const [dto, setDto] = useState(null);
   const [errorText, setErrorText] = useState("");
+  const onApiErrorRef = useRef(onApiError);
+
+  useEffect(() => {
+    onApiErrorRef.current = onApiError;
+  }, [onApiError]);
 
   useEffect(() => {
     let isActive = true;
@@ -19,9 +24,9 @@ export function SearchPage({ query, onOpenProduct, onGoGarage, onApiError }) {
       })
       .catch((e) => {
         if (!isActive) return;
-        const message = e?.message || "Не удалось выполнить поиск";
+        const message = "Сервис поиска временно недоступен. Попробуйте повторить запрос чуть позже.";
         setErrorText(message);
-        onApiError?.(message);
+        onApiErrorRef.current?.(message);
       })
       .finally(() => {
         if (isActive) setIsLoading(false);
@@ -29,7 +34,7 @@ export function SearchPage({ query, onOpenProduct, onGoGarage, onApiError }) {
     return () => {
       isActive = false;
     };
-  }, [query, onApiError]);
+  }, [query]);
 
   if (isLoading) {
     return (
@@ -59,8 +64,12 @@ export function SearchPage({ query, onOpenProduct, onGoGarage, onApiError }) {
     return (
       <main className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8">
         <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-rose-900">
-          <div className="text-lg font-bold">Ошибка поиска</div>
-          <div className="mt-1 text-sm">{errorText}</div>
+          <div className="text-lg font-bold">Поиск временно недоступен</div>
+          <div className="mt-1 text-sm">Мы уже работаем над восстановлением сервиса.</div>
+          <div className="mt-3 text-sm">
+            Попробуйте повторить запрос через пару минут. Пока можно перейти в разделы каталога или открыть сохранённые
+            автомобили в гараже.
+          </div>
         </div>
       </main>
     );
