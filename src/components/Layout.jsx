@@ -23,7 +23,16 @@ function FooterColumn({ title, links, onNavigateHome }) {
   );
 }
 
-export function Layout({ children, cartCount = 0, onGoHome, onGoGarage, onGoCart, onSearchSubmit }) {
+export function Layout({
+  children,
+  cartCount = 0,
+  toasts = [],
+  onDismissToast,
+  onGoHome,
+  onGoGarage,
+  onGoCart,
+  onSearchSubmit,
+}) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [headerQ, setHeaderQ] = useState("");
 
@@ -56,12 +65,14 @@ export function Layout({ children, cartCount = 0, onGoHome, onGoGarage, onGoCart
             <input
               value={headerQ}
               onChange={(e) => setHeaderQ(e.target.value)}
+              data-testid="header-search-input"
               className="min-w-0 flex-1 bg-transparent text-sm font-medium text-white outline-none placeholder:text-slate-500"
               placeholder="Артикул, VIN или название запчасти"
               aria-label="Поиск по сайту"
             />
             <button
               type="submit"
+              data-testid="header-search-submit"
               className="hidden shrink-0 rounded-xl bg-gradient-to-r from-teal-500 to-cyan-600 px-4 py-2 text-sm font-bold text-white shadow-md shadow-teal-900/30 transition hover:brightness-110 sm:inline"
             >
               Найти
@@ -104,6 +115,7 @@ export function Layout({ children, cartCount = 0, onGoHome, onGoGarage, onGoCart
             <button
               type="button"
               onClick={onGoCart}
+              data-testid="header-cart-button"
               className="relative flex items-center gap-2 rounded-xl border border-teal-500/50 bg-teal-500/10 px-3 py-2 text-sm font-bold text-teal-100 transition hover:bg-teal-500/20"
             >
               <Icon name="cart" className="h-4 w-4" />
@@ -150,6 +162,38 @@ export function Layout({ children, cartCount = 0, onGoHome, onGoGarage, onGoCart
           </div>
         ) : null}
       </header>
+
+      {toasts.length ? (
+        <div className="pointer-events-none fixed right-4 top-24 z-[70] flex w-[min(92vw,360px)] flex-col gap-2">
+          {toasts.map((toast) => (
+            <div
+              key={toast.id}
+              className={`pointer-events-auto rounded-xl border bg-white p-3 shadow-lg ${
+                toast.kind === "error"
+                  ? "border-rose-200"
+                  : toast.kind === "success"
+                    ? "border-emerald-200"
+                    : "border-slate-200"
+              }`}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-sm font-bold text-slate-900">{toast.title}</div>
+                  {toast.text ? <div className="mt-1 text-xs text-slate-600">{toast.text}</div> : null}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => onDismissToast?.(toast.id)}
+                  className="text-slate-400 transition hover:text-slate-700"
+                  aria-label="Закрыть уведомление"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
 
       {children}
 

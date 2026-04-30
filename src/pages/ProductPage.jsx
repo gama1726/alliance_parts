@@ -130,6 +130,7 @@ export function ProductPage({ product, onBack, onSearchArticle, onAddToCart }) {
                       <button
                         type="button"
                         onClick={() => onAddToCart(product.id)}
+                        data-testid="product-add-to-cart"
                         className="rounded-lg border border-teal-300 bg-teal-50 px-3 py-2 text-xs font-bold text-teal-800 transition hover:border-teal-500 hover:bg-teal-100"
                       >
                         В корзину

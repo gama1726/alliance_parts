@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
 const STORAGE_KEY = "alliance_front_store_v1";
 const MAX_RECENT_SEARCHES = 8;
+const TOAST_TIMEOUT_MS = 2600;
 
 const AppStoreContext = createContext(null);
 
@@ -23,6 +24,7 @@ export function AppStoreProvider({ children }) {
   const initial = readInitialState();
   const [cartItems, setCartItems] = useState(initial.cartItems);
   const [recentSearches, setRecentSearches] = useState(initial.recentSearches);
+  const [toasts, setToasts] = useState([]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ cartItems, recentSearches }));
@@ -61,17 +63,36 @@ export function AppStoreProvider({ children }) {
 
     const cartCount = cartItems.reduce((acc, item) => acc + (item.qty || 0), 0);
 
+    const pushToast = (toast) => {
+      const id = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const safeToast = {
+        id,
+        kind: toast?.kind || "info",
+        title: toast?.title || "Уведомление",
+        text: toast?.text || "",
+      };
+      setToasts((prev) => [...prev, safeToast]);
+      setTimeout(() => {
+        setToasts((prev) => prev.filter((x) => x.id !== id));
+      }, TOAST_TIMEOUT_MS);
+    };
+
+    const removeToast = (id) => setToasts((prev) => prev.filter((x) => x.id !== id));
+
     return {
       cartItems,
       cartCount,
       recentSearches,
+      toasts,
       addRecentSearch,
       addToCart,
       changeCartQty,
       removeFromCart,
       clearCart,
+      pushToast,
+      removeToast,
     };
-  }, [cartItems, recentSearches]);
+  }, [cartItems, recentSearches, toasts]);
 
   return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;
 }

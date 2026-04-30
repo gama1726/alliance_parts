@@ -23,7 +23,7 @@ export function CartPage({ cartItems, onGoHome, onOpenProduct, onQtyChange, onRe
   const totalSum = rows.reduce((acc, row) => acc + row.sum, 0);
 
   return (
-    <main className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8">
+    <main className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8" data-testid="cart-page">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-slate-900">Корзина</h1>
