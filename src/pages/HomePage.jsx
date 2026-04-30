@@ -61,7 +61,7 @@ const popularParts = [
   { title: "Склад в наличии", text: "Быстрые позиции", image: photos.partsShelf },
 ];
 
-export function HomePage({ onSearchSubmit, onGoGarage }) {
+export function HomePage({ onSearchSubmit, onGoGarage, recentSearches = [] }) {
   const [tab, setTab] = useState("article");
   const [q, setQ] = useState("");
   const placeholder = useMemo(() => getSearchPlaceholder(tab), [tab]);
@@ -154,6 +154,23 @@ export function HomePage({ onSearchSubmit, onGoGarage }) {
                     Подсказка по артикулу
                   </button>
                 </div>
+              {recentSearches.length ? (
+                <div className="mt-4 border-t border-slate-100 pt-3">
+                  <div className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500">Недавние запросы</div>
+                  <div className="flex flex-wrap gap-2">
+                    {recentSearches.map((item) => (
+                      <button
+                        key={item}
+                        type="button"
+                        onClick={() => onSearchSubmit(item)}
+                        className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:border-teal-300 hover:text-teal-800"
+                      >
+                        {item}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
               </div>
             </form>
           </div>

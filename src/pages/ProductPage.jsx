@@ -10,6 +10,19 @@ export function ProductPage({ product, onBack, onSearchArticle, onAddToCart }) {
   const [tab, setTab] = useState("offers");
   const [openAnalog, setOpenAnalog] = useState(null);
 
+  if (product === undefined) {
+    return (
+      <main className="mx-auto max-w-[1400px] px-4 py-16 sm:px-6 lg:px-8">
+        <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6">
+          <div className="h-6 w-56 animate-pulse rounded bg-slate-200" />
+          <div className="h-4 w-full animate-pulse rounded bg-slate-100" />
+          <div className="h-4 w-4/5 animate-pulse rounded bg-slate-100" />
+          <div className="h-36 animate-pulse rounded-xl bg-slate-100" />
+        </div>
+      </main>
+    );
+  }
+
   if (!product) {
     return (
       <main className="mx-auto max-w-[1400px] px-4 py-16 sm:px-6 lg:px-8">
