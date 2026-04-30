@@ -14,13 +14,13 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-public class CatalogMockService {
+public class CatalogDataService {
     private final ProductRepository productRepository;
     private final GarageCarRepository garageCarRepository;
     private final CatalogGroupRepository catalogGroupRepository;
     private final VehicleLookupRepository vehicleLookupRepository;
 
-    public CatalogMockService(
+    public CatalogDataService(
             ProductRepository productRepository,
             GarageCarRepository garageCarRepository,
             CatalogGroupRepository catalogGroupRepository,

@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.alliance.backend.api.dto.CatalogDtos;
 import ru.alliance.backend.api.error.ApiNotFoundException;
-import ru.alliance.backend.service.CatalogMockService;
+import ru.alliance.backend.service.CatalogDataService;
 
 import java.util.List;
 import java.util.Map;
@@ -19,20 +19,20 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api")
 public class CatalogController {
-    private final CatalogMockService catalogMockService;
+    private final CatalogDataService catalogDataService;
 
-    public CatalogController(CatalogMockService catalogMockService) {
-        this.catalogMockService = catalogMockService;
+    public CatalogController(CatalogDataService catalogDataService) {
+        this.catalogDataService = catalogDataService;
     }
 
     @GetMapping("/search")
     public CatalogDtos.SearchResponseDto search(@RequestParam("q") @NotBlank String query) {
-        return catalogMockService.search(query);
+        return catalogDataService.search(query);
     }
 
     @GetMapping("/products/{id}")
     public ResponseEntity<CatalogDtos.ProductDto> productById(@PathVariable String id) {
-        CatalogDtos.ProductDto dto = catalogMockService.getProductById(id);
+        CatalogDtos.ProductDto dto = catalogDataService.getProductById(id);
         if (dto == null) {
             throw new ApiNotFoundException("Товар с id '" + id + "' не найден.");
         }
@@ -41,7 +41,7 @@ public class CatalogController {
 
     @GetMapping("/garage")
     public List<CatalogDtos.GarageCarDto> garage() {
-        return catalogMockService.getGarageCars();
+        return catalogDataService.getGarageCars();
     }
 
     @GetMapping("/health")
