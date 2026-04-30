@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.alliance.backend.api.dto.CatalogDtos;
+import ru.alliance.backend.api.error.ApiNotFoundException;
 import ru.alliance.backend.service.CatalogMockService;
 
 import java.util.List;
@@ -32,7 +33,9 @@ public class CatalogController {
     @GetMapping("/products/{id}")
     public ResponseEntity<CatalogDtos.ProductDto> productById(@PathVariable String id) {
         CatalogDtos.ProductDto dto = catalogMockService.getProductById(id);
-        if (dto == null) return ResponseEntity.notFound().build();
+        if (dto == null) {
+            throw new ApiNotFoundException("Товар с id '" + id + "' не найден.");
+        }
         return ResponseEntity.ok(dto);
     }
 

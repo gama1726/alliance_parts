@@ -1,0 +1,163 @@
+openapi: 3.0.3
+info:
+  title: Alliance Parts API
+  version: 1.0.0
+  description: Стабилизированный контракт для фронтенда витрины.
+servers:
+  - url: http://127.0.0.1:8080
+paths:
+  /api/health:
+    get:
+      summary: Проверка состояния сервиса
+      responses:
+        "200":
+          description: OK
+  /api/search:
+    get:
+      summary: Поиск по артикулу / VIN / тексту
+      parameters:
+        - in: query
+          name: q
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Результат поиска
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponseDto"
+        "400":
+          description: Некорректный запрос
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorDto"
+        "503":
+          description: Временная недоступность поиска
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorDto"
+  /api/products/{id}:
+    get:
+      summary: Карточка товара
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Карточка товара
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductDto"
+        "404":
+          description: Товар не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiErrorDto"
+  /api/garage:
+    get:
+      summary: Список автомобилей в гараже
+      responses:
+        "200":
+          description: Список машин
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GarageCarDto"
+components:
+  schemas:
+    ApiErrorDto:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: string
+          nullable: true
+        path:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+    SearchResponseDto:
+      type: object
+      properties:
+        query:
+          type: string
+        type:
+          type: string
+        status:
+          type: string
+        vehicle:
+          $ref: "#/components/schemas/VehicleDto"
+        product:
+          $ref: "#/components/schemas/ProductDto"
+        hint:
+          $ref: "#/components/schemas/HintDto"
+        sidebar:
+          $ref: "#/components/schemas/SidebarDto"
+    ProductDto:
+      type: object
+      properties:
+        id: { type: string }
+        article: { type: string }
+        brand: { type: string }
+        name: { type: string }
+        line: { type: string }
+        rating: { type: number }
+        reviewsCount: { type: integer }
+        image: { type: string }
+        badges:
+          type: array
+          items: { type: string }
+    VehicleDto:
+      type: object
+      properties:
+        brand: { type: string }
+        model: { type: string }
+        generation: { type: string }
+        year: { type: string }
+        engine: { type: string }
+    HintDto:
+      type: object
+      properties:
+        kind: { type: string }
+        title: { type: string }
+        text: { type: string }
+    SidebarDto:
+      type: object
+      properties:
+        garageCars:
+          type: array
+          items:
+            $ref: "#/components/schemas/GarageCarDto"
+        catalogGroups:
+          type: array
+          items:
+            $ref: "#/components/schemas/CatalogGroupDto"
+    GarageCarDto:
+      type: object
+      properties:
+        id: { type: string }
+        label: { type: string }
+        subtitle: { type: string }
+        vin: { type: string }
+        catalogHint: { type: string }
+    CatalogGroupDto:
+      type: object
+      properties:
+        id: { type: string }
+        title: { type: string }
+        count: { type: string }

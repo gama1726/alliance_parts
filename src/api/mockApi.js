@@ -10,10 +10,19 @@ async function request(path) {
   if (!res.ok) {
     let message = `HTTP ${res.status}`;
     try {
-      const text = await res.text();
-      if (text) message = text;
+      const payload = await res.json();
+      if (payload?.message) {
+        message = payload.message;
+      } else if (typeof payload === "string" && payload.trim()) {
+        message = payload;
+      }
     } catch {
-      // ignore parsing issues and keep status message
+      try {
+        const text = await res.text();
+        if (text) message = text;
+      } catch {
+        // ignore parsing issues and keep status message
+      }
     }
     throw new Error(message);
   }
