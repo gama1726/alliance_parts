@@ -1,12 +1,115 @@
+import { useEffect, useMemo, useState } from "react";
 import { catalogGroups, garageCars, getProductById, parseVin, resolveProductIdFromQuery, vinLookup } from "../data/mockData.js";
 import { Icon } from "../components/Icon.jsx";
 import { ImageWithFallback } from "../components/ImageWithFallback.jsx";
 
+function detectQueryType(query) {
+  const raw = String(query || "").trim();
+  if (!raw) return "empty";
+  const compact = raw.replace(/[\s\u00A0\-–—._/\\|]+/g, "").toUpperCase();
+  if (compact.length === 17) return "vin";
+  if (/[A-Z]/i.test(raw) && /\d/.test(raw)) return "article";
+  if (raw.length < 3) return "too_short";
+  return "text";
+}
+
+function getSearchHint(query, hasVinMatch, hasProductMatch) {
+  const raw = String(query || "").trim();
+  const compact = raw.replace(/[\s\u00A0\-–—._/\\|]+/g, "").toUpperCase();
+  const type = detectQueryType(raw);
+
+  if (!raw) {
+    return {
+      kind: "error",
+      title: "Пустой запрос",
+      text: "Введите артикул, VIN или текст запроса перед поиском.",
+    };
+  }
+
+  if (hasVinMatch || hasProductMatch) {
+    return {
+      kind: "ok",
+      title: "Результаты найдены",
+      text: "Откройте карточку или используйте фильтры справа для следующего шага.",
+    };
+  }
+
+  if (type === "vin") {
+    if (!parseVin(raw)) {
+      return {
+        kind: "error",
+        title: "VIN похож на некорректный",
+        text: "VIN должен содержать 17 символов и не включать I, O, Q.",
+      };
+    }
+    return {
+      kind: "empty",
+      title: "VIN не найден в демо-базе",
+      text: "Для проверки используйте VF3MJAHXVGS314095.",
+    };
+  }
+
+  if (type === "too_short") {
+    return {
+      kind: "error",
+      title: "Слишком короткий запрос",
+      text: "Введите минимум 3 символа или полный артикул.",
+    };
+  }
+
+  if (type === "article") {
+    return {
+      kind: "empty",
+      title: "Артикул не найден",
+      text: "Попробуйте OE31601 или 4144109100.",
+    };
+  }
+
+  return {
+    kind: "empty",
+    title: "Совпадений нет",
+    text: `По запросу «${compact || raw}» ничего не найдено в локальных данных.`,
+  };
+}
+
 export function SearchPage({ query, onOpenProduct, onGoGarage }) {
-  const vin = parseVin(query);
-  const vehicle = vin ? vinLookup[vin] : null;
-  const productId = resolveProductIdFromQuery(query);
-  const product = productId ? getProductById(productId) : null;
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => setIsLoading(false), 320);
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  const vin = useMemo(() => parseVin(query), [query]);
+  const vehicle = useMemo(() => (vin ? vinLookup[vin] : null), [vin]);
+  const productId = useMemo(() => resolveProductIdFromQuery(query), [query]);
+  const product = useMemo(() => (productId ? getProductById(productId) : null), [productId]);
+  const hint = useMemo(() => getSearchHint(query, Boolean(vehicle), Boolean(product)), [query, vehicle, product]);
+
+  if (isLoading) {
+    return (
+      <main className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-6 h-5 w-56 animate-pulse rounded bg-slate-200" />
+        <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+          <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
+            <div className="h-6 w-44 animate-pulse rounded bg-slate-200" />
+            <div className="h-4 w-full animate-pulse rounded bg-slate-100" />
+            <div className="h-4 w-5/6 animate-pulse rounded bg-slate-100" />
+            <div className="mt-4 h-28 w-full animate-pulse rounded-xl bg-slate-100" />
+          </div>
+          <aside className="rounded-2xl border border-slate-200 bg-white p-5">
+            <div className="h-4 w-24 animate-pulse rounded bg-slate-200" />
+            <div className="mt-4 space-y-3">
+              <div className="h-12 animate-pulse rounded bg-slate-100" />
+              <div className="h-12 animate-pulse rounded bg-slate-100" />
+              <div className="h-12 animate-pulse rounded bg-slate-100" />
+            </div>
+          </aside>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="mx-auto max-w-[1400px] px-4 py-8 sm:px-6 lg:px-8">
@@ -50,6 +153,19 @@ export function SearchPage({ query, onOpenProduct, onGoGarage }) {
             Сейчас показаны демо-совпадения из локального набора. После бэкенда здесь будет полноценная выдача,
             фильтры и сортировки как на крупных витринах.
           </p>
+
+          <div
+            className={`mt-4 rounded-xl border px-4 py-3 text-sm ${
+              hint.kind === "ok"
+                ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+                : hint.kind === "error"
+                  ? "border-rose-200 bg-rose-50 text-rose-900"
+                  : "border-amber-200 bg-amber-50 text-amber-900"
+            }`}
+          >
+            <div className="font-bold">{hint.title}</div>
+            <div className="mt-1">{hint.text}</div>
+          </div>
 
           {product ? (
             <button
