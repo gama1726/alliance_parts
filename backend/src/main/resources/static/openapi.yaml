@@ -1,18 +1,18 @@
 openapi: 3.0.3
 info:
   title: Alliance Parts API
-  version: 1.0.0
-  description: Стабилизированный контракт для фронтенда витрины.
+  version: 1.1.0
+  description: Контракт API v1 для фронтенда витрины (legacy /api сохранен временно).
 servers:
-  - url: http://127.0.0.1:8080
+  - url: http://127.0.0.1:8080/api/v1
 paths:
-  /api/health:
+  /health:
     get:
       summary: Проверка состояния сервиса
       responses:
         "200":
           description: OK
-  /api/search:
+  /search:
     get:
       summary: Поиск по артикулу / VIN / тексту
       parameters:
@@ -40,7 +40,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiErrorDto"
-  /api/products/{id}:
+  /products/{id}:
     get:
       summary: Карточка товара
       parameters:
@@ -62,7 +62,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiErrorDto"
-  /api/garage:
+  /garage:
     get:
       summary: Список автомобилей в гараже
       responses:
