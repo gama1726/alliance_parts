@@ -27,7 +27,7 @@ class CatalogApiIntegrationTest {
 
     @Test
     void searchByArticleReturnsProductAndOkStatus() throws Exception {
-        mockMvc.perform(get("/api/search").param("q", "OE31601"))
+        mockMvc.perform(get("/api/v1/search").param("q", "OE31601"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.query", is("OE31601")))
                 .andExpect(jsonPath("$.status", is("ok")))
@@ -39,7 +39,7 @@ class CatalogApiIntegrationTest {
 
     @Test
     void searchByVinReturnsResolvedVehicle() throws Exception {
-        mockMvc.perform(get("/api/search").param("q", "VF3MJAHXVGS314095"))
+        mockMvc.perform(get("/api/v1/search").param("q", "VF3MJAHXVGS314095"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status", is("ok")))
                 .andExpect(jsonPath("$.type", is("vin")))
@@ -49,20 +49,28 @@ class CatalogApiIntegrationTest {
 
     @Test
     void productByIdReturnsNotFoundErrorPayload() throws Exception {
-        mockMvc.perform(get("/api/products/missing-product"))
+        mockMvc.perform(get("/api/v1/products/missing-product"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.code", is("NOT_FOUND")))
                 .andExpect(jsonPath("$.message", notNullValue()))
-                .andExpect(jsonPath("$.path", is("/api/products/missing-product")))
+                .andExpect(jsonPath("$.path", is("/api/v1/products/missing-product")))
                 .andExpect(jsonPath("$.timestamp", notNullValue()));
     }
 
     @Test
     void garageReturnsSeededCars() throws Exception {
-        mockMvc.perform(get("/api/garage"))
+        mockMvc.perform(get("/api/v1/garage"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(greaterThanOrEqualTo(2))))
                 .andExpect(jsonPath("$[0].id", notNullValue()))
                 .andExpect(jsonPath("$[0].label", notNullValue()));
+    }
+
+    @Test
+    void legacyApiPrefixStillWorksForBackwardCompatibility() throws Exception {
+        mockMvc.perform(get("/api/search").param("q", "OE31601"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status", is("ok")))
+                .andExpect(jsonPath("$.product.article", is("OE31601")));
     }
 }

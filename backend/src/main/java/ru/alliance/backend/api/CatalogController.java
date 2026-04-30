@@ -17,7 +17,7 @@ import java.util.Map;
 
 @Validated
 @RestController
-@RequestMapping("/api")
+@RequestMapping({"/api", "/api/v1"})
 public class CatalogController {
     private final CatalogDataService catalogDataService;
 
