@@ -12,3 +12,4 @@ test-results
 .idea/
 *.iml
 backend/backend-data/
+.vscode/
